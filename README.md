@@ -67,21 +67,19 @@ Mezr is a lightweight JavaScript utility library for measuring and comparing the
   mezr.intersection(elemA, elemB, elemC);
   mezr.intersection([elemA, 'content'], [elemB, 'margin']);
 
-  // Calculate how much elemB overflows elemA.
+  // Calculate how much elemA overflows elemB.
   mezr.overflow(elemA, elemB);
 
   // Calculate what elemA's position (left and top CSS properties) should
   // be when it's left-top (northwest) corner is placed in the center of
   // elemB. Works only for for positioned elements (CSS position attribute
   // must be something else than static).
-  mezr.place({
-    element: elemA,
-    target: elemB,
+  mezr.placement(elemA, elemB, {
     position: 'left top center center'
   });
   ```
 
-## API v0.6.2
+## API v1.0.0-dev
 
 * [.width()](#width)
 * [.height()](#height)
@@ -91,7 +89,7 @@ Mezr is a lightweight JavaScript utility library for measuring and comparing the
 * [.distance()](#distance)
 * [.intersection()](#intersection)
 * [.overflow()](#overflow)
-* [.place()](#place)
+* [.placement()](#placement)
 
 &nbsp;
 
@@ -99,9 +97,9 @@ Mezr is a lightweight JavaScript utility library for measuring and comparing the
 
 Returns the width of an element in pixels. Accepts also the window object (for getting the viewport width) and the document object (for getting the width of the whole document).
 
-**`.width( el, [ edge ] )`**
+**`.width( element, [ edge ] )`**
 
-* **el** &nbsp;&mdash;&nbsp; *element / window / document*
+* **element** &nbsp;&mdash;&nbsp; *element / window / document*
   * Accepts any DOM element, the document object or the window object.
 * **edge** &nbsp;&mdash;&nbsp; *string*
   * Defines which edge (content, padding, scroll, border, margin) of the element is considered as it's outer edge. Optional.
@@ -152,9 +150,9 @@ mezr.width(elem, 'margin');
 
 Returns the height of an element in pixels. Accepts also the window object (for getting the viewport height) and the document object (for getting the height of the whole document).
 
-**`.height( el, [ edge ] )`**
+**`.height( element, [ edge ] )`**
 
-* **el** &nbsp;&mdash;&nbsp; *element / window / document*
+* **element** &nbsp;&mdash;&nbsp; *element / window / document*
   * Accepts any DOM element, the document object or the window object.
 * **edge** &nbsp;&mdash;&nbsp; *string*
   * Defines which edge (content, padding, scroll, border, margin) of the element is considered as it's outer edge. Optional.
@@ -205,11 +203,11 @@ mezr.height(elem, 'margin');
 
 Returns the element's offset from another element, window or document.
 
-**`.offset( el, [ edge ] )`**
+**`.offset( element, [ edge ] )`**
 
 Returns the element's offset from the document. The second argument defines which edge layer of the element should be used for the calculations.
 
-* **el** &nbsp;&mdash;&nbsp; *element / window / document*
+* **element** &nbsp;&mdash;&nbsp; *element / window / document*
   * Accepts any DOM element, the document object or the window object.
 * **edge** &nbsp;&mdash;&nbsp; *string*
   * Defines which edge (content, padding, scroll, border, margin) of the element is considered as its outer edge. Optional.
@@ -218,11 +216,11 @@ Returns the element's offset from the document. The second argument defines whic
   * This argument has no effect for `window` or `document`.
   * Note that 'padding' and 'scroll' values produce identical results. The 'scroll' value is only allowed here in order to make this method work in sync with [`.width()`](#width) and [`.height()`](#height) methods.
 
-**`.offset( el, [ from ] )`**
+**`.offset( element, [ from ] )`**
 
 Returns the element's offset from another element, window or document. The second (optional) argument defines from which element the offset is calculated.
 
-* **el** &nbsp;&mdash;&nbsp; *element / window / document / object / array*
+* **element** &nbsp;&mdash;&nbsp; *element / window / document / object / array*
   * Document/Element/Window: the edge is considered to be 'border'.
   * Array: allows one to control which layer (content, padding, scroll, border, margin) is considered as the element's edge, e.g. `[someElem, 'content']`.
   * Object: must have left and top properties with numeric values (e.g. `{left: 10, top: -10}`).
@@ -276,22 +274,22 @@ mezr.offset(elem, mezr.containingBlock(elem));
 
 Returns an object containing the provided element's dimensions and offsets. This is basically a helper method for calculating an element's dimensions and offsets simultaneously. Mimics the native [getBoundingClientRect](https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect) method with the added bonus of allowing to define the *edge layer* of the element, and also the element from which the offset is calculated.
 
-**`.rect( el, [ edge ] )`**
+**`.rect( element, [ edge ] )`**
 
 Get rect data of the element with the offset calculated relative to the document.
 
-* **el** &nbsp;&mdash;&nbsp; *element / window / document*
+* **element** &nbsp;&mdash;&nbsp; *element / window / document*
   * Accepts any DOM element, the document object or the window object.
 * **edge** &nbsp;&mdash;&nbsp; *boolean*
   * Defines which edge (content, padding, scroll, border, margin) of the element is considered as its outer edge.
   * Default: `'border'`
   * Allowed values: `'content'`, `'padding'`, `'scroll'`, `'border'`, `'margin'`.
 
-**`.rect( el, [ from ] )`**
+**`.rect( element, [ from ] )`**
 
 Get rect data of the element with the offset calculated relative to another element, window or document.
 
-* **el** &nbsp;&mdash;&nbsp; *element / window / document / object / array*
+* **element** &nbsp;&mdash;&nbsp; *element / window / document / object / array*
   * Document/Element/Window: the edge is considered to be 'border'.
   * Array: allows one to control which layer (content, padding, scroll, border, margin) is considered as the element's edge, e.g. `[someElem, 'content']`.
   * Object: must have left and top properties with numeric values (e.g. `{left: 10, top: -10}`).
@@ -352,9 +350,9 @@ Returns the element's [containing block](https://www.w3.org/TR/CSS2/visuren.html
 * Sticky element is a special case since "left", "right", "top" and "bottom" CSS properties do not always affect the element's position. However, for consistency, the closest scrolling ancestor element is always considered as sticky element's containing block, and if no scrolling ancestor is found window is returned.
 * Root element and body element are treated equally with all other elements.
 
-**`.containingBlock( el, [ fakePosition ] )`**
+**`.containingBlock( element, [ fakePosition ] )`**
 
-* **el** &nbsp;&mdash;&nbsp; *element / window / document*
+* **element** &nbsp;&mdash;&nbsp; *element / window / document*
   * Accepts any DOM element, the document object or the window object.
 * **fakePosition** &nbsp;&mdash;&nbsp; *element / window / document*
   * An optional argument which allows you to get the element's containing block as if the element had this CSS position value applied. Using this argument does not modify the element's true CSS position in any way, it's only used for the calculations.
@@ -387,11 +385,11 @@ Returns the distance between two elements (in pixels) or `-1` if the elements ov
 
 **`.distance( from, to )`**
 
-* **from** &nbsp;&mdash;&nbsp; *element / array / object*
+* **from** &nbsp;&mdash;&nbsp; *element / window / document / object / array*
   * Element: the element's edge is considered to be 'border'.
   * Array: allows one to control which layer (content, padding, scroll, border, margin) is considered as the element's edge, e.g. `[someElem, 'content']`.
   * Object: must have width, height, left and top properties with numeric values (e.g. `{width: 10, height: 10, left: 10, top: -10}`).
-* **to** &nbsp;&mdash;&nbsp; *element / array / object*
+* **to** &nbsp;&mdash;&nbsp; *element / window / document / object / array*
   * Element: the element's edge is considered to be 'border'.
   * Array: allows one to control which layer (content, padding, scroll, border, margin) is considered as the element's edge, e.g. `[someElem, 'content']`.
   * Object: must have width, height, left and top properties with numeric values (e.g. `{width: 10, height: 10, left: 10, top: -10}`).
@@ -427,9 +425,9 @@ mezr.distance([elemA, 'content'], [elemB, 'scroll']);
 
 Detect if two or more elements overlap and calculate their possible intersection area (dimensions and offsets). If the intersection area exists the function returns an object containing the intersection area's dimensions and offsets. Otherwise `null` is returned.
 
-**`.intersection( ...el )`**
+**`.intersection( ...element )`**
 
-* **el** &nbsp;&mdash;&nbsp; *array / element / object*
+* **element** &nbsp;&mdash;&nbsp; *element / window / document / object / array*
   * Element: the element's edge is considered to be 'border'.
   * Array: allows one to control which layer (content, padding, scroll, border, margin) is considered as the element's edge, e.g. `[someElem, 'content']`.
   * Object: must have width, height, left and top properties with numeric values (e.g. `{width: 10, height: 20, left: 15, top: -10}`).
@@ -481,17 +479,17 @@ mezr.intersection(elemA, [elemB, 'margin'], rectA, rectB);
 
 ### .overflow()
 
-Calculate how much an element overflows another element per each side.
+Calculate how much an element overflows another element ("container") per each side.
 
-**`.overflow( container, el )`**
+**`.overflow( element, container )`**
 
+* **element** &nbsp;&mdash;&nbsp; *array / element / object*
+  * Element: the element's edge is considered to be 'border'.
+  * Array: allows one to control which layer (content, padding, scroll, border, margin) is considered as the element's edge, e.g. `[someElem, 'content']`.
+  * Object: must have width, height, left and top properties with numeric values (e.g. `{width: 10, height: 20, left: 15, top: -10}`).
 * **container** &nbsp;&mdash;&nbsp; *array / element / object*
   * Element: the container's edge is considered to be 'border'.
   * Array: allows one to control which layer (content, padding, scroll, border, margin) is considered as the container's edge, e.g. `[someElem, 'content']`.
-  * Object: must have width, height, left and top properties with numeric values (e.g. `{width: 10, height: 20, left: 15, top: -10}`).
-* **el** &nbsp;&mdash;&nbsp; *array / element / object*
-  * Element: the element's edge is considered to be 'border'.
-  * Array: allows one to control which layer (content, padding, scroll, border, margin) is considered as the element's edge, e.g. `[someElem, 'content']`.
   * Object: must have width, height, left and top properties with numeric values (e.g. `{width: 10, height: 20, left: 15, top: -10}`).
 
 **Returns** &nbsp;&mdash;>&nbsp; *object*
@@ -511,100 +509,99 @@ Note: A positive value means that the element overflows the container.
 
 ```javascript
 var container = document.getElementById('container');
-var elem = document.getElementById('elem');
+var element = document.getElementById('element');
 
-// Calculate the intersection area between two elements.
-mezr.overflow(container, elem);
+// Calculate how many pixels element overflows the container.
+mezr.overflow(element, container);
 
-// Define which edge to use for element calculations.
-mezr.overflow([container, 'content'], [elem, 'scroll']);
+// Define which edge to use for element dimension/offset calculations.
+mezr.overflow([element, 'scroll'], [container, 'content']);
 ```
 
 &nbsp;
 
-### .place()
+### .placement()
 
 Calculate an element's position (left/top CSS properties) when positioned relative to another element, window or the document. Note that this method does not actually position the element, it just returns the new position which can be applied to the element if needed.
 
-**`.place( options )`**
+**`.placement( ofElement, toElement, options )`**
 
-The *options* argument should be an object. You may configure it with the following properties.
-
-* **element** &nbsp;&mdash;&nbsp; *element / window / document / array*
+* **ofElement** &nbsp;&mdash;&nbsp; *element / window / document / array*
   * The element which is to be positioned. This element's position needs to be either "relative", "absolute" or "fixed" for the function to work correctly. Although "sticky" elements are considered to be positioned this method does not yet support calculating their placement correctly.
-  * Default: `null`
   * Element: the element’s edge is considered to be “border”.
   * Array: allows one to control which layer (content, padding, scroll, border, margin) is considered as the element's edge, e.g. `[someElem, 'content']`.
-* **target** &nbsp;&mdash;&nbsp; *element / window / document / array / object*
-  * Defines which element the element is positioned relative to.
+* **toElement** &nbsp;&mdash;&nbsp; *element / window / document / array / object*
+  * Defines which element the first argument's element is positioned relative to.
   * Default: `null`
   * Element: the element's edge is considered to be 'border'.
   * Array: allows one to control which layer (content, padding, scroll, border, margin) is considered as the element's edge, e.g. `[someElem, 'content']`.
   * Object: must have width, height, left and top properties with numeric values (e.g. `{width: 10, height: 20, left: 15, top: -10}`).
-* **position** &nbsp;&mdash;&nbsp; *string*
-  * Define the attachment joint.
-  * Default: `'left top left top'`
-  * The syntax is 'elementX elementY targetX targetY' .
-    * Describe horizontal position with `'left'`, `'center'` and `'right'`.
-    * Describe vertical position with `'top'`, `'center'` and `'bottom'`.
-* **offsetX** &nbsp;&mdash;&nbsp; *number / string*
-  * An optional horizontal offset in pixels or in percentages. A number is always considered as a pixel value. A string is considered as a percentage value when it contains '%', e.g. `'50%'`. The percentage values are relative to the target element's width. For example if the target element's width is 50 pixels a value of `'100%'` would push the element 50 pixels to the right.
-  * Default: `0`
-* **offsetY** &nbsp;&mdash;&nbsp; *number / string*
-  * An optional vertical offset in pixels or in percentages. A number is always considered as a pixel value. A string is considered as a percentage value when it contains '%', e.g. `'50%'`. The percentage values are relative to the target element's height. For example if the target element's height is 50 pixels a value of `'100%'` would push down the element 50 pixels.
-  * Default: `0`
-* **contain** &nbsp;&mdash;&nbsp; *null / object*
-  * Defines an optional container element/area that is used for restricting the element's positioning.
-  * Default: `null`
-* **contain.within** &nbsp;&mdash;&nbsp; *element / window / document / array / object*
-  * The container element/area.
-  * Default: `null`
-  * Element: the element's edge is considered to be 'border'.
-  * Array: allows one to control which layer (content, padding, scroll, border, margin) is considered as the element's edge, e.g. `[someElem, 'content']`.
-  * Object: must have width, height, left and top properties with numeric values (e.g. `{width: 10, height: 20, left: 15, top: -10}`).
-* **contain.onOverflow** &nbsp;&mdash;&nbsp; *string / object / null*
-  * Defines what to do when the element overflows the container.
-  * Default: `'none'`
-  * For maximum control you can provide an object with four properties: 'left', 'right', 'top' and 'bottom'. Each property represents an edge of the container and each property's value should be one of the predefined actions (see below) which will be called when/if the element overflows the container. Here's an example: `{left: 'push', right: 'forcepush', top: 'none', bottom: 'push'}`.
-  * Alternatively you can also just define collision actions per axis: `{x: 'push', y: 'none'}`.
-  * Or you can mix and match edges and axis: `{x: 'push', top: 'none', bottom: 'push'}`.
-  * For minimum configuration you can just provide a single value as a string, e.g. `'push'` which will be used for all edges.
-  * Collision actions:
-    * `'none'`: Ignore containment.
-    * `'push'`: Push the element back within the container, so that it does not overlap the container. If the element is larger than the container and opposite edges both have 'push' action enabled, the element will be positioned so that it overlaps the container an equal amount from both edges.
-    * `'forcepush'`: Identical to 'push', but with one exception: it makes sure that the element's edge is always pushed fully back within the container. This action is only useful when the opposite edge has 'push' action enabled.
-* **adjust** &nbsp;&mdash;&nbsp; *function / null*
-  * An optional callback function which is called just before returning the element's new calculated position. Can be used to adjust the return value just before returning it and accessing all the positioning data that was used to calculate the element's new position.
-  * Default: `null`
-  * This callback receives two arguments:
-    * **position** &nbsp;&mdash;&nbsp; *object*
-      * This object is the same object that the method will return, so modifying it's properties will affect the return value of the method.
-      * **position.left** &nbsp;&mdash;&nbsp; *number*
-        * The positioned element's left (CSS) property value (fractional).
-      * **position.top** &nbsp;&mdash;&nbsp; *number*
-        * The positioned element's top (CSS) property value (fractional).
-    * **data** &nbsp;&mdash;&nbsp; *object*
-      * This object contains all the positioning data.
-      * **data.elementRect** &nbsp;&mdash;&nbsp; *object*
-        * Element's *new* [rect](#rect) data where the element is assumed to be in the newly calculated position.
-      * **data.targetRect** &nbsp;&mdash;&nbsp; *object*
-        * Target's *current* [rect](#rect) data.
-      * **data.containerRect** &nbsp;&mdash;&nbsp; *object / null*
-        * Container's *current* [rect](#rect) data if `collision.within` is defined. Otherwise `null`.
-      * **data.shift** &nbsp;&mdash;&nbsp; *object*
-        * Horiozontal and vertical diff between the element's current and new offset. In other words, answers the question how much the element moved in the x-axis and y-axis and in which direction.
-        * **data.shift.left** &nbsp;&mdash;&nbsp; *number*
-        * **data.shift.top** &nbsp;&mdash;&nbsp; *number*
-      * **data.overflow** &nbsp;&mdash;&nbsp; *object / null*
-        * How much the element (in it's *new* position) [overflows](#overflow) the container per each side. Identical to `mezr.overflow(data.containerRect, data.elementRect)`. If `collision.within` is not defined this will be `null`.
-        * **data.overflow.left** &nbsp;&mdash;&nbsp; *number*
-        * **data.overflow.right** &nbsp;&mdash;&nbsp; *number*
-        * **data.overflow.top** &nbsp;&mdash;&nbsp; *number*
-        * **data.overflow.bottom** &nbsp;&mdash;&nbsp; *number*
-      * **data.overflowCorrection** &nbsp;&mdash;&nbsp; *object*
-        * This object contains data on how much the `contain.onOverflow` action moved the element in x-axis and y-axis, and in which direction. If no `contain.onOverflow` action was defined or the action had no effect on the element's position the values of the `left` and `top` attributes are `0`.
-        * **data.overflowCorrection.left** &nbsp;&mdash;&nbsp; *number*
-        * **data.overflowCorrection.top** &nbsp;&mdash;&nbsp; *number*
+* **options** &nbsp;&mdash;&nbsp; *object*
+  * These options allow you to define more specifically how the placement calculation is handled.
+  * **options.position** &nbsp;&mdash;&nbsp; *string*
+    * Define the attachment joint.
+    * Default: `'left top left top'`
+    * The syntax is 'elementX elementY targetX targetY' .
+      * Describe horizontal position with `'left'`, `'center'` and `'right'`.
+      * Describe vertical position with `'top'`, `'center'` and `'bottom'`.
+  * **options.offsetX** &nbsp;&mdash;&nbsp; *number / string*
+    * An optional horizontal offset in pixels or in percentages. A number is always considered as a pixel value. A string is considered as a percentage value when it contains '%', e.g. `'50%'`. The percentage values are relative to the target element's width. For example if the target element's width is 50 pixels a value of `'100%'` would push the element 50 pixels to the right.
+    * Default: `0`
+  * **options.offsetY** &nbsp;&mdash;&nbsp; *number / string*
+    * An optional vertical offset in pixels or in percentages. A number is always considered as a pixel value. A string is considered as a percentage value when it contains '%', e.g. `'50%'`. The percentage values are relative to the target element's height. For example if the target element's height is 50 pixels a value of `'100%'` would push down the element 50 pixels.
+    * Default: `0`
+  * **options.contain** &nbsp;&mdash;&nbsp; *null / object*
+    * Defines an optional container element/area that is used for restricting the element's positioning.
+    * Default: `null`
+    * **options.contain.within** &nbsp;&mdash;&nbsp; *element / window / document / array / object*
+      * The container element/area.
+      * Default: `null`
+      * Element: the element's edge is considered to be 'border'.
+      * Array: allows one to control which layer (content, padding, scroll, border, margin) is considered as the element's edge, e.g. `[someElem, 'content']`.
+      * Object: must have width, height, left and top properties with numeric values (e.g. `{width: 10, height: 20, left: 15, top: -10}`).
+    * **options.contain.onOverflow** &nbsp;&mdash;&nbsp; *string / object / null*
+      * Defines what to do when the element overflows the container.
+      * Default: `'none'`
+      * For maximum control you can provide an object with four properties: 'left', 'right', 'top' and 'bottom'. Each property represents an edge of the container and each property's value should be one of the predefined actions (see below) which will be called when/if the element overflows the container. Here's an example: `{left: 'push', right: 'forcepush', top: 'none', bottom: 'push'}`.
+      * Alternatively you can also just define collision actions per axis: `{x: 'push', y: 'none'}`.
+      * Or you can mix and match edges and axis: `{x: 'push', top: 'none', bottom: 'push'}`.
+      * For minimum configuration you can just provide a single value as a string, e.g. `'push'` which will be used for all edges.
+      * Collision actions:
+        * `'none'`: Ignore containment.
+        * `'push'`: Push the element back within the container, so that it does not overlap the container. If the element is larger than the container and opposite edges both have 'push' action enabled, the element will be positioned so that it overlaps the container an equal amount from both edges.
+        * `'forcepush'`: Identical to 'push', but with one exception: it makes sure that the element's edge is always pushed fully back within the container. This action is only useful when the opposite edge has 'push' action enabled.
+  * **options.adjust** &nbsp;&mdash;&nbsp; *function / null*
+    * An optional callback function which is called just before returning the element's new calculated position. Can be used to adjust the return value just before returning it and accessing all the positioning data that was used to calculate the element's new position.
+    * Default: `null`
+    * This callback receives two arguments:
+      * **position** &nbsp;&mdash;&nbsp; *object*
+        * This object is the same object that the method will return, so modifying it's properties will affect the return value of the method.
+        * **position.left** &nbsp;&mdash;&nbsp; *number*
+          * The positioned element's left (CSS) property value (fractional).
+        * **position.top** &nbsp;&mdash;&nbsp; *number*
+          * The positioned element's top (CSS) property value (fractional).
+      * **data** &nbsp;&mdash;&nbsp; *object*
+        * This object contains all the positioning data.
+        * **data.elementRect** &nbsp;&mdash;&nbsp; *object*
+          * Element's *new* [rect](#rect) data where the element is assumed to be in the newly calculated position.
+        * **data.targetRect** &nbsp;&mdash;&nbsp; *object*
+          * Target's *current* [rect](#rect) data.
+        * **data.containerRect** &nbsp;&mdash;&nbsp; *object / null*
+          * Container's *current* [rect](#rect) data if `collision.within` is defined. Otherwise `null`.
+        * **data.shift** &nbsp;&mdash;&nbsp; *object*
+          * Horiozontal and vertical diff between the element's current and new offset. In other words, answers the question how much the element moved in the x-axis and y-axis and in which direction.
+          * **data.shift.left** &nbsp;&mdash;&nbsp; *number*
+          * **data.shift.top** &nbsp;&mdash;&nbsp; *number*
+        * **data.overflow** &nbsp;&mdash;&nbsp; *object / null*
+          * How much the element (in it's *new* position) [overflows](#overflow) the container per each side. Identical to `mezr.overflow(data.containerRect, data.elementRect)`. If `collision.within` is not defined this will be `null`.
+          * **data.overflow.left** &nbsp;&mdash;&nbsp; *number*
+          * **data.overflow.right** &nbsp;&mdash;&nbsp; *number*
+          * **data.overflow.top** &nbsp;&mdash;&nbsp; *number*
+          * **data.overflow.bottom** &nbsp;&mdash;&nbsp; *number*
+        * **data.overflowCorrection** &nbsp;&mdash;&nbsp; *object*
+          * This object contains data on how much the `contain.onOverflow` action moved the element in x-axis and y-axis, and in which direction. If no `contain.onOverflow` action was defined or the action had no effect on the element's position the values of the `left` and `top` attributes are `0`.
+          * **data.overflowCorrection.left** &nbsp;&mdash;&nbsp; *number*
+          * **data.overflowCorrection.top** &nbsp;&mdash;&nbsp; *number*
 
 **Returns** &nbsp;&mdash;>&nbsp; *object*
 
@@ -617,11 +614,7 @@ The *options* argument should be an object. You may configure it with the follow
 
 ```javascript
 // Calculate elemA's new position (left and top CSS properties).
-var newElementPosition = mezr.place({
-  // Let's use elemA's content layer for calculations.
-  element: [elemA, 'content'],
-  // Let's use elemB's margin layer for calculations.
-  target: [elemB, 'margin'],
+var newElementPosition = mezr.placement([elemA, 'content'], [elemB, 'margin'], {
   // Let's position elemA's "left top" corner to the center of elemB.
   position: 'left top center center',
   // Nudge elemA 5px to the left.

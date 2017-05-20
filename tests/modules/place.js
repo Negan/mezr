@@ -14,7 +14,7 @@ TestSuite.modules.push(function () {
   QUnit.test('Should always return an object with two properties: "left" and "top".', function (assert) {
 
     assert.expect(1);
-    assert.deepEqual(Object.keys(mezr.place({element: element, target: element})).sort(), ['left', 'top']);
+    assert.deepEqual(Object.keys(mezr.placement(element, element)).sort(), ['left', 'top']);
 
   });
 
@@ -22,9 +22,7 @@ TestSuite.modules.push(function () {
 
     assert.expect(1);
 
-    assert.deepEqual(mezr._settings.placeDefaultOptions, {
-      element: null,
-      target: null,
+    assert.deepEqual(mezr._settings.placementDefaultOptions, {
       position: 'left top left top',
       offsetX: 0,
       offsetY: 0,
@@ -57,9 +55,7 @@ TestSuite.modules.push(function () {
 
     // Element.
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'left top right bottom'
       }),
       {
@@ -71,9 +67,7 @@ TestSuite.modules.push(function () {
 
     // Element (array syntax).
     assert.deepEqual(
-      mezr.place({
-        element: [element, 'content'],
-        target: fixture,
+      mezr.placement([element, 'content'], fixture, {
         position: 'left top right bottom'
       }),
       {
@@ -85,9 +79,7 @@ TestSuite.modules.push(function () {
 
     // Window.
     assert.deepEqual(
-      mezr.place({
-        element: window,
-        target: fixture,
+      mezr.placement(window, fixture, {
         position: 'left top right bottom'
       }),
       {
@@ -99,9 +91,7 @@ TestSuite.modules.push(function () {
 
     // Window (array syntax).
     assert.deepEqual(
-      mezr.place({
-        element: [window, 'content'],
-        target: fixture,
+      mezr.placement([window, 'content'], fixture, {
         position: 'left top right bottom'
       }),
       {
@@ -113,9 +103,7 @@ TestSuite.modules.push(function () {
 
     // Document.
     assert.deepEqual(
-      mezr.place({
-        element: document,
-        target: fixture,
+      mezr.placement(document, fixture, {
         position: 'left top right bottom'
       }),
       {
@@ -127,9 +115,7 @@ TestSuite.modules.push(function () {
 
     // Document (array syntax).
     assert.deepEqual(
-      mezr.place({
-        element: [document, 'content'],
-        target: fixture,
+      mezr.placement([document, 'content'], fixture, {
         position: 'left top right bottom'
       }),
       {
@@ -164,9 +150,7 @@ TestSuite.modules.push(function () {
 
     // Element.
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'left top right bottom'
       }),
       {
@@ -178,9 +162,7 @@ TestSuite.modules.push(function () {
 
     // Element (array syntax).
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: [fixture, 'content'],
+      mezr.placement(element, [fixture, 'content'], {
         position: 'left top right bottom'
       }),
       {
@@ -192,9 +174,7 @@ TestSuite.modules.push(function () {
 
     // Window.
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: window,
+      mezr.placement(element, window, {
         position: 'left top right bottom'
       }),
       {
@@ -206,9 +186,7 @@ TestSuite.modules.push(function () {
 
     // Window (array syntax).
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: [window, 'content'],
+      mezr.placement(element, [window, 'content'], {
         position: 'left top right bottom'
       }),
       {
@@ -220,9 +198,7 @@ TestSuite.modules.push(function () {
 
     // Document.
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: document,
+      mezr.placement(element, document, {
         position: 'left top right bottom'
       }),
       {
@@ -234,9 +210,7 @@ TestSuite.modules.push(function () {
 
     // Document (array syntax).
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: [document, 'content'],
+      mezr.placement(element, [document, 'content'], {
         position: 'left top right bottom'
       }),
       {
@@ -248,14 +222,7 @@ TestSuite.modules.push(function () {
 
     // Object.
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: {
-          left: 0,
-          top: 0,
-          width: 10,
-          height: 10
-        },
+      mezr.placement(element, {left: 0, top: 0, width: 10, height: 10}, {
         position: 'left top right bottom'
       }),
       {
@@ -293,9 +260,7 @@ TestSuite.modules.push(function () {
     window.scrollTo(0, 0);
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: window,
+      mezr.placement(element, window, {
         offsetX: -10,
         offsetY: 10
       }),
@@ -306,9 +271,7 @@ TestSuite.modules.push(function () {
       'Using negative and positive floats work.'
     );
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: window,
+      mezr.placement(element, window, {
         offsetX: '-10',
         offsetY: '10'
       }),
@@ -319,9 +282,7 @@ TestSuite.modules.push(function () {
       'Using negative and positive strings work.'
     );
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: window,
+      mezr.placement(element, window, {
         offsetX: '-10px',
         offsetY: '10px'
       }),
@@ -332,9 +293,7 @@ TestSuite.modules.push(function () {
       'Using negative and positive strings with "px" appendix work.'
     );
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: window,
+      mezr.placement(element, window, {
         offsetX: '-30%',
         offsetY: '60%'
       }),
@@ -370,9 +329,7 @@ TestSuite.modules.push(function () {
     window.scrollTo(0, 0);
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'right top left top',
         contain: null
       }),
@@ -384,9 +341,7 @@ TestSuite.modules.push(function () {
     );
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'right top left top',
         contain: {
           within: fixture,
@@ -425,9 +380,7 @@ TestSuite.modules.push(function () {
     window.scrollTo(0, 0);
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'right bottom left top',
         contain: {
           within: fixture,
@@ -442,9 +395,7 @@ TestSuite.modules.push(function () {
     );
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'right bottom left top',
         contain: {
           within: fixture,
@@ -462,9 +413,7 @@ TestSuite.modules.push(function () {
     );
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'right bottom left top',
         contain: {
           within: fixture,
@@ -484,9 +433,7 @@ TestSuite.modules.push(function () {
     );
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'right bottom left top',
         contain: {
           within: fixture,
@@ -506,9 +453,7 @@ TestSuite.modules.push(function () {
     );
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'left top right bottom',
         contain: {
           within: fixture,
@@ -528,9 +473,7 @@ TestSuite.modules.push(function () {
     );
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'right bottom left top',
         contain: {
           within: fixture,
@@ -550,9 +493,7 @@ TestSuite.modules.push(function () {
     );
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'right bottom left top',
         contain: {
           within: fixture,
@@ -572,9 +513,7 @@ TestSuite.modules.push(function () {
     );
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'right bottom left top',
         contain: {
           within: fixture,
@@ -619,9 +558,7 @@ TestSuite.modules.push(function () {
     window.scrollTo(0, 0);
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'right bottom left top',
         contain: {
           within: window,
@@ -636,9 +573,7 @@ TestSuite.modules.push(function () {
     );
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'right bottom left top',
         contain: {
           within: document,
@@ -653,9 +588,7 @@ TestSuite.modules.push(function () {
     );
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'right bottom left top',
         contain: {
           within: {left: -5, top: -5, width: 10, height: 10},
@@ -670,9 +603,7 @@ TestSuite.modules.push(function () {
     );
 
     assert.deepEqual(
-      mezr.place({
-        element: element,
-        target: fixture,
+      mezr.placement(element, fixture, {
         position: 'right bottom left top',
         contain: {
           within: [fixture, 'content'],
@@ -716,18 +647,14 @@ TestSuite.modules.push(function () {
 
     window.scrollTo(0, 0);
 
-    mezr.place({
-      element: element,
-      target: fixture,
+    mezr.placement(element, fixture, {
       position: 'left top left top',
       adjust: function () {
         assert.deepEqual(arguments.length, 2, 'Adjust callback receives two arguments');
       }
     });
 
-    expected = mezr.place({
-      element: element,
-      target: fixture,
+    expected = mezr.placement(element, fixture, {
       position: 'left top left top',
       adjust: function (position) {
         result = position;
@@ -735,9 +662,7 @@ TestSuite.modules.push(function () {
     });
     assert.strictEqual(result, expected, 'The first argument of adjust callback is the return object.');
 
-    expected = mezr.place({
-      element: element,
-      target: fixture,
+    expected = mezr.placement(element, fixture, {
       position: 'left top left top',
       adjust: function (position) {
         result = position;
@@ -747,9 +672,7 @@ TestSuite.modules.push(function () {
     });
     assert.deepEqual(result, expected, 'Modifying the first argument of adjust callback affects the return data.');
 
-    mezr.place({
-      element: element,
-      target: fixture,
+    mezr.placement(element, fixture, {
       position: 'left top left top',
       adjust: function (position, data) {
         assert.deepEqual(
@@ -767,9 +690,7 @@ TestSuite.modules.push(function () {
       }
     });
 
-    mezr.place({
-      element: element,
-      target: fixture,
+    mezr.placement(element, fixture, {
       position: 'left top left top',
       adjust: function (position, data) {
 
@@ -789,16 +710,14 @@ TestSuite.modules.push(function () {
       }
     });
 
-    mezr.place({
-      element: element,
-      target: fixture,
+    mezr.placement(element, fixture, {
       position: 'left top left top',
       contain: {
         within: window
       },
       adjust: function (position, data) {
 
-        var overflow = mezr.overflow(window, element);
+        var overflow = mezr.overflow(element, window);
         overflow.left += 10;
         overflow.right -= 10;
         overflow.top += 10;
@@ -812,9 +731,7 @@ TestSuite.modules.push(function () {
       }
     });
 
-    mezr.place({
-      element: element,
-      target: fixture,
+    mezr.placement(element, fixture, {
       position: 'left top left top',
       contain: {
         within: window,
@@ -989,9 +906,7 @@ TestSuite.modules.push(function () {
       var anchorRect = mezr.rect(anchor, 'border');
 
       // Get the result.
-      var result = mezr.place({
-        element: [element, elementEdge],
-        target: [anchor, 'border'],
+      var result = mezr.placement([element, elementEdge], [anchor, 'border'], {
         position: my + ' ' + at
       });
 

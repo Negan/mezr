@@ -1,8 +1,19 @@
 /*!
- * mezr v0.6.2
+ * mezr v1.0.0-dev
  * https://github.com/niklasramo/mezr
  * Copyright (c) 2016 Niklas Rämö <inramo@gmail.com>
  * Released under the MIT license
+ */
+
+/*
+TODOS/IDEAS:
+************
+- [x] Switch argument positions in overflow method.
+- [x] Don't put any required arguments in the options in place method..?
+- [-] Polish docs, code and API.
+- [ ] Add gap method..?
+- [ ] Take transforms into account.
+- [ ] Make stuff faster and smaller.
  */
 
 (function (global, factory) {
@@ -60,10 +71,8 @@
   // Mezr settings.
   var settings = {};
 
-  // Default options for place method.
-  settings.placeDefaultOptions = {
-    element: null,
-    target: null,
+  // Default options for placement method.
+  settings.placementDefaultOptions = {
     position: 'left top left top',
     offsetX: 0,
     offsetY: 0,
@@ -474,13 +483,13 @@
    * mezr.overflow(elemA, [elemB, 'padding']);
    *
    * @public
-   * @param {(Array|Document|Element|Window|Rectangle)} elA
-   * @param {(Array|Document|Element|Window|Rectangle)} elB
+   * @param {(Array|Document|Element|Window|Rectangle)} element
+   * @param {(Array|Document|Element|Window|Rectangle)} container
    * @returns {Overflow}
    */
-  function getOverflow(elA, elB) {
+  function getOverflow(element, container) {
 
-    var ret = getOverlap(elB, elA);
+    var ret = getOverlap(element, container);
 
     return {
       left: -ret.left,
@@ -496,9 +505,7 @@
    * relative to another element, window or the document.
    *
    * @example
-   * var newElementPosition = mezr.place({
-   *   element: [elemA, 'content'],
-   *   target: [elemB, 'margin'],
+   * var newElementPosition = mezr.placement(elemA, elemB, {
    *   position: 'left top center center',
    *   offsetX: -5,
    *   offsetY: '50%',
@@ -518,16 +525,23 @@
    * });
    *
    * @public
-   * @param {PlaceOptions} options
-   * @returns {PlaceData}
+   * @param {(Array|Document|Element|Window|Rectangle)} element
+   * @param {(Array|Document|Element|Window|Rectangle)} target
+   * @param {Object} [options]
+   * @param {PlacementPosition} [options.position='left top left top']
+   * @param {Number} [options.offsetX=0]
+   * @param {Number} [options.offsetY=0]
+   * @param {?PlacementContainment} [options.contain=null]
+   * @param {?PlacementAdjustmentCallback} [options.adjust=null]
+   * @returns {Placement}
    */
-  function getPlace(options) {
+  function getPlacement(element, target, options) {
 
     var ret = {};
-    var opts = mergeObjects([settings.placeDefaultOptions, options || {}]);
+    var eRect = getSanitizedRect(element, true);
+    var tRect = getSanitizedRect(target);
+    var opts = mergeObjects([settings.placementDefaultOptions, options || {}]);
     var position = typeof opts.position === 'string' ? opts.position.split(' ') : opts.position;
-    var eRect = getSanitizedRect(opts.element, true);
-    var tRect = getSanitizedRect(opts.target);
     var isContainDefined = isPlainObject(opts.contain);
     var container = isContainDefined && opts.contain.within;
     var overflowAction = isContainDefined && getOverflowAction(opts.contain.onOverflow);
@@ -544,8 +558,8 @@
     offsetY = typeof offsetY === 'string' && offsetY.indexOf('%') > -1 ? toFloat(offsetY) / 100 * eRect.height : toFloat(offsetY);
 
     // Calculate element's new position (left/top coordinates).
-    ret.left = getPlacePosition(position[0], position[2], tRect.width, tRect.left, eRect.width, eRect.left, offsetX);
-    ret.top = getPlacePosition(position[1], position[3], tRect.height, tRect.top, eRect.height, eRect.top, offsetY);
+    ret.left = getPlacementPosition(position[0], position[2], tRect.width, tRect.left, eRect.width, eRect.left, offsetX);
+    ret.top = getPlacementPosition(position[1], position[3], tRect.height, tRect.top, eRect.height, eRect.top, offsetY);
 
     // Update element offset data to match the newly calculated position.
     eRect.left += ret.left;
@@ -561,13 +575,13 @@
 
       // Handle horizontal overflow.
       if (overlap.left < 0 || overlap.right < 0) {
-        overflowFixLeft = getPlaceOverflowPush(overflowAction, overlap);
+        overflowFixLeft = getPlacementOverflowPush(overflowAction, overlap);
         ret.left += overflowFixLeft;
       }
 
       // Handle vertical overflow.
       if (overlap.top < 0 || overlap.bottom < 0) {
-        overflowFixTop = getPlaceOverflowPush(overflowAction, overlap, 1);
+        overflowFixTop = getPlacementOverflowPush(overflowAction, overlap, 1);
         ret.top += overflowFixTop;
       }
 
@@ -594,7 +608,7 @@
 
       // Get the element's current offset so we can calculate how much the
       // element moved.
-      eCurrentOffset = isPlainObject(opts.element) ? opts.element : getOffsetFromDocument.apply(null, [].concat(opts.element));
+      eCurrentOffset = isPlainObject(element) ? element : getOffsetFromDocument.apply(null, [].concat(element));
 
       // Calculate overlap data based on the new position.
       overlap = cRect ? getOverlap(eRect, cRect) : null;
@@ -1312,7 +1326,7 @@
    *   - Additional left/top offset in pixels.
    * @returns {Number}
    */
-  function getPlacePosition(elementPosition, targetPosition, targetSize, targetOffset, elementSize, elementNwOffset, extraOffset) {
+  function getPlacementPosition(elementPosition, targetPosition, targetSize, targetOffset, elementSize, elementNwOffset, extraOffset) {
 
     var placement = elementPosition.charAt(0) + targetPosition.charAt(0);
     var northwestPoint = targetOffset + extraOffset - elementNwOffset;
@@ -1334,12 +1348,12 @@
    * order to be aligned correctly if the target element overlaps the container.
    *
    * @private
-   * @param {OverflowConfig} overflowConfig
+   * @param {PlacementOverflowConfig} overflowConfig
    * @param {Overlap} targetOverlap
    * @param {Boolean} isVertical
    * @returns {Number}
    */
-  function getPlaceOverflowPush(overflowConfig, targetOverlap, isVertical) {
+  function getPlacementOverflowPush(overflowConfig, targetOverlap, isVertical) {
 
     var ret = 0;
     var push = 'push';
@@ -1396,11 +1410,11 @@
   }
 
   /**
-   * Sanitize contain.onOverflow option of .place() method.
+   * Sanitize contain.onOverflow option of .placement() method.
    *
    * @private
-   * @param {OverflowConfig} overflowConfig
-   * @returns {?overflowConfigSanitized}
+   * @param {PlacementOverflowConfig} overflowConfig
+   * @returns {?PlacementOverflow}
    */
   function getOverflowAction(overflowConfig) {
 
@@ -1537,32 +1551,73 @@
    */
 
   /**
-   * @typedef {Object} PlaceOptions
-   * @param {(Array|Document|Element|Window|Rectangle)} element
-   * @property {(Array|Document|Element|Window|Rectangle)} target
-   * @property {PlaceOptionsPosition} [position='left top left top']
-   * @property {Number} [offsetX=0]
-   * @property {Number} [offsetY=0]
-   * @property {?PlaceOptionsContainment} [contain=null]
+   * @typedef {Object} Placement
+   * @property {Number} left
+   *   - Target element's new left position.
+   * @property {Number} top
+   *   - Target element's new top position.
    */
 
   /**
-   * Raw positioning data for position option of .place() method.
+   * Raw positioning data for position option of .placement() method.
    * String syntax: "elemX elemY targetX targetY".
    * Array syntax: ["elemX", "elemY", "targetX", "targetY"].
    * Possible values for elemX and targetX: "left", "center", "right".
    * Possible values for elemY and targetY: "top", "center", "bottom".
    *
-   * @typedef {(Array|String)} PlaceOptionsPosition
+   * @typedef {(Array|String)} PlacementPosition
    */
 
   /**
-   * All properties accepts the following values: "push", "forcepush" and
-   * "none".
+   * Placement method's containment configuration.
    *
-   * @typedef {Object} PlaceOptionsContainment
+   * @typedef {Object} PlacementContainment
    * @property {?(Array|Document|Element|Window|Rectangle)} within
-   * @property {?(OverflowConfig|String)} onOverflow
+   * @property {?(PlacementOverflowConfig|String)} onOverflow
+   */
+
+  /**
+   * A callback function which is called just before returning the element's new
+   * calculated position. Can be used to adjust the return value just before
+   * returning it and accessing all the positioning data that was used to
+   * calculate the element's new position.
+   *
+   * @callback PlacementAdjustmentCallback
+   * @param {Placement} position
+   *   - This object is the same object that the method will return, so
+   *     modifying it's properties will affect the return value of the method.
+   * @param {PlacementData} data
+   *   - This object contains all the positioning data.
+   */
+
+  /**
+   * All the positioning data of placement method.
+   *
+   * @typedef {Object} PlacementData
+   * @property {Rectangle} elementRect
+   *   - Element's new rect data where the element is assumed to be in the newly
+   *     calculated position.
+   * @property {Rectangle} targetRect
+   *   - Target's current rect data.
+   * @property {?Rectangle} containerRect
+   *   - Container's current rect data if collision.within is defined. Otherwise
+   *     null.
+   * @property {Object} shift
+   *   - Horiozontal and vertical diff between the element's current and new
+   *     offset. In other words, answers the question how much the element moved
+   *     in the x-axis and y-axis and in which direction.
+   * @property {Number} shift.left
+   * @property {Number} shift.top
+   * @property {?Overflow} overflow
+   *   - How much the element (in it's new position) overflows the container per
+   *     each side. If collision.within is not defined this will be null.
+   * @property {Object} overflowCorrection
+   *   - This object contains data on how much the contain.onOverflow action
+   *     moved the element in x-axis and y-axis, and in which direction. If no
+   *     contain.onOverflow action was defined or the action had no effect on
+   *     the element's position the values of the left and top attributes are 0.
+   * @property {Number} overflowCorrection.left
+   * @property {Number} overflowCorrection.top
    */
 
   /**
@@ -1574,7 +1629,7 @@
    * mix side overflow properties with axis overflow properties remember that
    * the side configuration overwrites the axis configuration.
    *
-   * @typedef {Object} OverflowConfig
+   * @typedef {Object} PlacementOverflowConfig
    * @property {String} [left='none']
    * @property {String} [right='none']
    * @property {String} [top='none']
@@ -1585,21 +1640,13 @@
 
   /**
    * A sanitized configuration data object for contain.onOverflow option of
-   * .place() method.
+   * placement method.
    *
-   * @typedef {Object} OverflowConfigSanitized
+   * @typedef {Object} PlacementOverflow
    * @property {String} left
    * @property {String} right
    * @property {String} top
    * @property {String} bottom
-   */
-
-  /**
-   * @typedef {Object} PlaceData
-   * @property {Number} left
-   *   - Target element's new left position.
-   * @property {Number} top
-   *   - Target element's new top position.
    */
 
   // Name and return the public methods.
@@ -1612,7 +1659,7 @@
     distance: getDistance,
     intersection: getIntersectionMultiple,
     overflow: getOverflow,
-    place: getPlace,
+    placement: getPlacement,
     _settings: settings
   };
 
