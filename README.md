@@ -74,7 +74,7 @@ Mezr is a lightweight JavaScript utility library for measuring and comparing the
   // be when it's left-top (northwest) corner is placed in the center of
   // elemB. Works only for for positioned elements (CSS position attribute
   // must be something else than static).
-  mezr.placement(elemA, elemB, {
+  mezr.place(elemA, elemB, {
     position: 'left top center center'
   });
   ```
@@ -89,7 +89,7 @@ Mezr is a lightweight JavaScript utility library for measuring and comparing the
 * [.distance()](#distance)
 * [.intersection()](#intersection)
 * [.overflow()](#overflow)
-* [.placement()](#placement)
+* [.place()](#place)
 
 &nbsp;
 
@@ -520,11 +520,11 @@ mezr.overflow([element, 'scroll'], [container, 'content']);
 
 &nbsp;
 
-### .placement()
+### .place()
 
 Calculate an element's position (left/top CSS properties) when positioned relative to another element, window or the document. Note that this method does not actually position the element, it just returns the new position which can be applied to the element if needed.
 
-**`.placement( ofElement, toElement, options )`**
+**`.place( ofElement, toElement, options )`**
 
 * **ofElement** &nbsp;&mdash;&nbsp; *element / window / document / array*
   * The element which is to be positioned. This element's position needs to be either "relative", "absolute" or "fixed" for the function to work correctly. Although "sticky" elements are considered to be positioned this method does not yet support calculating their placement correctly.
@@ -614,7 +614,7 @@ Calculate an element's position (left/top CSS properties) when positioned relati
 
 ```javascript
 // Calculate elemA's new position (left and top CSS properties).
-var newElementPosition = mezr.placement([elemA, 'content'], [elemB, 'margin'], {
+var newElementPosition = mezr.undef([elemA, 'content'], [elemB, 'margin'], {
   // Let's position elemA's "left top" corner to the center of elemB.
   position: 'left top center center',
   // Nudge elemA 5px to the left.

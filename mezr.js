@@ -6,46 +6,37 @@
  */
 
 /*
-TODOS/IDEAS:
-************
+TODO
+****
 - [x] Switch argument positions in overflow method.
 - [x] Don't put any required arguments in the options in place method..?
-- [-] Polish docs, code and API.
-- [ ] Add gap method..?
 - [ ] Take transforms into account.
-- [ ] Make stuff faster and smaller.
+
+NEW FEATURES
+************
+- [ ] Add flip collision method to place method.
+- [ ] Add gap method..?
  */
 
 (function (global, factory) {
 
-  if (typeof define === 'function' && define.amd) {
-    define([], function () {
-      return factory(global);
-    });
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
   }
-  else if (typeof module === 'object' && module.exports) {
-    module.exports = factory(global);
+  else if (typeof define === 'function' && define.amd) {
+    define([], factory);
   }
   else {
-    global.mezr = factory(global);
+    global.mezr = factory();
   }
 
-}(this, function (global, undefined) {
+}(window !== void 0 ? window : this, function () {
 
   'use strict';
 
-  // Make sure we received a valid window object from the arguments.
-  var win = global.document && global.self === global.document.defaultView ? global : window;
-
-  // Cache document, root and body elements.
+  var win = window;
   var doc = win.document;
   var root = doc.documentElement;
-  var body = doc.body;
-
-  // Throw error if body is not available
-  if (!body) {
-    throw Error('Mezr needs access to body element.');
-  }
 
   // Cache some often used native functions.
   var abs = Math.abs;
@@ -68,26 +59,15 @@ TODOS/IDEAS:
   // Temporary bounding client rect data.
   var tempBCR;
 
-  // Mezr settings.
-  var settings = {};
-
-  // Default options for placement method.
-  settings.placementDefaultOptions = {
-    position: 'left top left top',
-    offsetX: 0,
-    offsetY: 0,
-    contain: null,
-    adjust: null
-  };
-
   // Get the primary supported transform property.
-  settings.transform = getSupportedTransform();
+  var transform = getSupportedTransform();
 
   // Check if transformed elements leak fixed elements? According W3C
   // specification (about transform rendering) a transformed element should
   // contain fixed elements, but not every browser follows the spec. So we need
   // to test it.
-  settings.transformLeaksFixed = doesTransformLeakFixed();
+  var transformLeaksFixed;
+  doc.body ? doesTransformLeakFixed() : doc.addEventListener('DOMContentLoaded', doesTransformLeakFixed);
 
   /**
    * Public methods
@@ -173,6 +153,11 @@ TODOS/IDEAS:
    */
   function getOffset(el, edge) {
 
+    var elemA;
+    var elemB;
+    var offsetA;
+    var offsetB;
+
     // Use default syntax if the element is not an array and the edge is
     // undefined or a string.
     if (!Array.isArray(el) && (!edge || typeof edge === 'string')) {
@@ -183,10 +168,10 @@ TODOS/IDEAS:
     // provided and calculate the offset from the second to the first element.
     else {
 
-      var elemA = [].concat(el);
-      var elemB = [].concat(edge);
-      var offsetA = isPlainObject(el) ? el : getOffsetFromDocument(elemA[0], elemA[1]);
-      var offsetB = isPlainObject(edge) ? edge : getOffsetFromDocument(elemB[0], elemB[1]);
+      elemA = [].concat(el);
+      elemB = [].concat(edge);
+      offsetA = isPlainObject(el) ? el : getOffsetFromDocument(elemA[0], elemA[1]);
+      offsetB = isPlainObject(edge) ? edge : getOffsetFromDocument(elemB[0], elemB[1]);
 
       return {
         left: offsetA.left - offsetB.left,
@@ -229,6 +214,11 @@ TODOS/IDEAS:
    */
   function getRect(el, edge) {
 
+    var elemA;
+    var elemB;
+    var rect;
+    var offsetFrom;
+
     // Use default syntax if the element is not an array and the edge is
     // undefined or a string.
     if (!Array.isArray(el) && (!edge || typeof edge === 'string')) {
@@ -239,10 +229,10 @@ TODOS/IDEAS:
     // provided and calculate the offset from the second to the first element.
     else {
 
-      var elemA = [].concat(el);
-      var elemB = [].concat(edge);
-      var rect = isPlainObject(el) ? el : getRectInternal(elemA[0], elemA[1]);
-      var offsetFrom = isPlainObject(edge) ? edge : getOffsetFromDocument(elemB[0], elemB[1]);
+      elemA = [].concat(el);
+      elemB = [].concat(edge);
+      rect = isPlainObject(el) ? el : getRectInternal(elemA[0], elemA[1]);
+      offsetFrom = isPlainObject(edge) ? edge : getOffsetFromDocument(elemB[0], elemB[1]);
 
       rect.left = rect.left - offsetFrom.left;
       rect.top = rect.top - offsetFrom.top;
@@ -335,7 +325,7 @@ TODOS/IDEAS:
 
       // If the element is fixed and transforms leak fixed elements, always
       // return window.
-      if (position === 'fixed' && settings.transformLeaksFixed) {
+      if (position === 'fixed' && doesTransformLeakFixed()) {
         return win;
       }
 
@@ -454,13 +444,14 @@ TODOS/IDEAS:
 
     // Get the initial intersection of the first two items.
     var intersection = getIntersection(arguments[0], arguments[1]);
+    var i;
 
     // If there are more than two items.
     if (arguments.length > 2) {
 
       // Loop the arguments until the end or until the intersection is
       // non-existent.
-      for (var i = 2; i < arguments.length; ++i) {
+      for (i = 2; i < arguments.length; ++i) {
         intersection = getIntersection(intersection, arguments[i]);
         if (!intersection) {
           break;
@@ -505,7 +496,7 @@ TODOS/IDEAS:
    * relative to another element, window or the document.
    *
    * @example
-   * var newElementPosition = mezr.placement(elemA, elemB, {
+   * var newElementPosition = mezr.place(elemA, elemB, {
    *   position: 'left top center center',
    *   offsetX: -5,
    *   offsetY: '50%',
@@ -524,23 +515,24 @@ TODOS/IDEAS:
    *   }
    * });
    *
+   *
    * @public
    * @param {(Array|Document|Element|Window|Rectangle)} element
    * @param {(Array|Document|Element|Window|Rectangle)} target
    * @param {Object} [options]
-   * @param {PlacementPosition} [options.position='left top left top']
+   * @param {PlacePosition} [options.position='left top left top']
    * @param {Number} [options.offsetX=0]
    * @param {Number} [options.offsetY=0]
-   * @param {?PlacementContainment} [options.contain=null]
-   * @param {?PlacementAdjustmentCallback} [options.adjust=null]
-   * @returns {Placement}
+   * @param {?PlaceContainment} [options.contain=null]
+   * @param {?PlaceAdjustmentCallback} [options.adjust=null]
+   * @returns {Place}
    */
-  function getPlacement(element, target, options) {
+  function getPlace(element, target, options) {
 
     var ret = {};
     var eRect = getSanitizedRect(element, true);
     var tRect = getSanitizedRect(target);
-    var opts = mergeObjects([settings.placementDefaultOptions, options || {}]);
+    var opts = mergeObjects([getPlace.defaultOptions, options || {}]);
     var position = typeof opts.position === 'string' ? opts.position.split(' ') : opts.position;
     var isContainDefined = isPlainObject(opts.contain);
     var container = isContainDefined && opts.contain.within;
@@ -558,8 +550,8 @@ TODOS/IDEAS:
     offsetY = typeof offsetY === 'string' && offsetY.indexOf('%') > -1 ? toFloat(offsetY) / 100 * eRect.height : toFloat(offsetY);
 
     // Calculate element's new position (left/top coordinates).
-    ret.left = getPlacementPosition(position[0], position[2], tRect.width, tRect.left, eRect.width, eRect.left, offsetX);
-    ret.top = getPlacementPosition(position[1], position[3], tRect.height, tRect.top, eRect.height, eRect.top, offsetY);
+    ret.left = getPlacePosition(position[0], position[2], tRect.width, tRect.left, eRect.width, eRect.left, offsetX);
+    ret.top = getPlacePosition(position[1], position[3], tRect.height, tRect.top, eRect.height, eRect.top, offsetY);
 
     // Update element offset data to match the newly calculated position.
     eRect.left += ret.left;
@@ -575,13 +567,13 @@ TODOS/IDEAS:
 
       // Handle horizontal overflow.
       if (overlap.left < 0 || overlap.right < 0) {
-        overflowFixLeft = getPlacementOverflowPush(overflowAction, overlap);
+        overflowFixLeft = getPlaceOverflowPush(overflowAction, overlap);
         ret.left += overflowFixLeft;
       }
 
       // Handle vertical overflow.
       if (overlap.top < 0 || overlap.bottom < 0) {
-        overflowFixTop = getPlacementOverflowPush(overflowAction, overlap, 1);
+        overflowFixTop = getPlaceOverflowPush(overflowAction, overlap, 1);
         ret.top += overflowFixTop;
       }
 
@@ -642,6 +634,15 @@ TODOS/IDEAS:
 
   }
 
+  // Default options for place method.
+  getPlace.defaultOptions = {
+    position: 'left top left top',
+    offsetX: 0,
+    offsetY: 0,
+    contain: null,
+    adjust: null
+  };
+
   /**
    * Private helper functions
    * ************************
@@ -670,12 +671,15 @@ TODOS/IDEAS:
   function getSupportedTransform() {
 
     var transforms = ['transform', 'WebkitTransform', 'MozTransform', 'OTransform', 'msTransform'];
+    var i;
+    var prop;
+    var prefix;
 
-    for (var i = 0; i < transforms.length; i++) {
-      if (root.style[transforms[i]] !== undefined) {
+    for (i = 0; i < transforms.length; i++) {
+      if (root.style[transforms[i]] !== void 0) {
 
-        var prop = transforms[i];
-        var prefix = prop.toLowerCase().split('transform')[0];
+        prop = transforms[i];
+        prefix = prop.toLowerCase().split('transform')[0];
 
         return {
           prefix: prefix,
@@ -705,44 +709,49 @@ TODOS/IDEAS:
    */
   function doesTransformLeakFixed() {
 
-    if (!settings.transform) {
-      return true;
-    }
-
-    var outer = doc.createElement('div');
-    var inner = doc.createElement('div');
+    var outer;
+    var inner;
     var leftNotTransformed;
     var leftTransformed;
+
+    if (transformLeaksFixed !== void 0) {
+      return transformLeaksFixed;
+    }
+
+    if (!transform) {
+      return transformLeaksFixed = true;
+    }
+
+    outer = doc.createElement('div');
+    inner = doc.createElement('div');
 
     setStyles(outer, {
       display: 'block',
       visibility: 'hidden',
       position: 'absolute',
-      width: '1px',
-      height: '1px',
-      left: '1px',
-      top: '0',
-      margin: '0'
+      left: '1px'
     });
 
     setStyles(inner, {
       display: 'block',
+      visibility: 'hidden',
       position: 'fixed',
-      width: '1px',
-      height: '1px',
-      left: '0',
-      top: '0',
-      margin: '0'
+      left: '0px'
     });
 
-    outer.appendChild(inner);
-    body.appendChild(outer);
-    leftNotTransformed = inner.getBoundingClientRect().left;
-    outer.style[settings.transform.propName] = 'translateX(0)';
-    leftTransformed = inner.getBoundingClientRect().left;
-    body.removeChild(outer);
+    outer.style[transform.propName] = '';
+    inner.style[transform.propName] = '';
 
-    return leftTransformed === leftNotTransformed;
+    outer.appendChild(inner);
+    doc.body.appendChild(outer);
+
+    leftNotTransformed = inner.getBoundingClientRect().left;
+    outer.style[transform.propName] = 'scale(1)';
+    leftTransformed = inner.getBoundingClientRect().left;
+
+    doc.body.removeChild(outer);
+
+    return transformLeaksFixed = leftTransformed === leftNotTransformed;
 
   }
 
@@ -758,10 +767,9 @@ TODOS/IDEAS:
    */
   function isTransformed(el) {
 
-    var transform = getStyle(el, settings.transform.styleName);
     var display = getStyle(el, 'display');
 
-    return transform !== 'none' && display !== 'inline' && display !== 'none';
+    return getStyle(el, transform.styleName) !== 'none' && display !== 'inline' && display !== 'none';
 
   }
 
@@ -788,10 +796,12 @@ TODOS/IDEAS:
   function mergeObjects(array) {
 
     var ret = {};
+    var len = array.length;
     var propName;
     var propVal;
+    var i;
 
-    for (var i = 0, len = array.length; i < len; i++) {
+    for (i = 0; i < len; i++) {
       for (propName in array[i]) {
         if (array[i].hasOwnProperty(propName)) {
           propVal = array[i][propName];
@@ -1015,10 +1025,10 @@ TODOS/IDEAS:
 
       if (includeScrollbar) {
         sbSize = win[innerDimension] - root[clientDimension];
-        ret = max(root[scrollDimension] + sbSize, body[scrollDimension] + sbSize, win[innerDimension]);
+        ret = max(root[scrollDimension] + sbSize, doc.body[scrollDimension] + sbSize, win[innerDimension]);
       }
       else {
-        ret = max(root[scrollDimension], body[scrollDimension], root[clientDimension]);
+        ret = max(root[scrollDimension], doc.body[scrollDimension], root[clientDimension]);
       }
 
     }
@@ -1049,8 +1059,8 @@ TODOS/IDEAS:
       }
 
       if (!includeBorder) {
-        ret -= borderA !== undefined ? borderA : getStyleAsFloat(el, 'border-' + edgeA + '-width');
-        ret -= borderB !== undefined ? borderB : getStyleAsFloat(el, 'border-' + edgeB + '-width');
+        ret -= borderA !== void 0 ? borderA : getStyleAsFloat(el, 'border-' + edgeA + '-width');
+        ret -= borderB !== void 0 ? borderB : getStyleAsFloat(el, 'border-' + edgeB + '-width');
       }
 
       if (includeMargin) {
@@ -1082,6 +1092,9 @@ TODOS/IDEAS:
       left: 0,
       top: 0
     };
+    var gbcr;
+    var marginLeft;
+    var marginTop;
 
     // Document's offsets are always 0.
     if (el === doc) {
@@ -1100,7 +1113,7 @@ TODOS/IDEAS:
     // Now we know we are calculating an element's offsets so let's first get
     // the element's bounding client rect. If it is not cached, then just fetch
     // it.
-    var gbcr = tempBCR || el.getBoundingClientRect();
+    gbcr = tempBCR || el.getBoundingClientRect();
 
     // Add bounding client rect's left/top values to the offsets.
     ret.left += gbcr.left;
@@ -1111,8 +1124,8 @@ TODOS/IDEAS:
 
     // Exclude element's positive margin size from the offset if needed.
     if (edge === 5) {
-      var marginLeft = getStyleAsFloat(el, 'margin-left');
-      var marginTop = getStyleAsFloat(el, 'margin-top');
+      marginLeft = getStyleAsFloat(el, 'margin-left');
+      marginTop = getStyleAsFloat(el, 'margin-top');
       ret.left -= marginLeft > 0 ? marginLeft : 0;
       ret.top -= marginTop > 0 ? marginTop : 0;
     }
@@ -1232,6 +1245,15 @@ TODOS/IDEAS:
    */
   function getStaticOffset(el, edge) {
 
+    var position;
+    var offset;
+    var left;
+    var right;
+    var top;
+    var bottom;
+    var marginLeft;
+    var marginTop;
+
     // Sanitize edge.
     edge = edge || 'border';
 
@@ -1240,15 +1262,15 @@ TODOS/IDEAS:
       return getOffsetFromDocument(el, edge);
     }
 
-    var position = getStyle(el, 'position');
-    var offset = position === 'absolute' || position === 'fixed' ? getOffsetFromDocument(getContainingBlock(el) || doc, 'padding') : getOffsetFromDocument(el, edge);
+    position = getStyle(el, 'position');
+    offset = position === 'absolute' || position === 'fixed' ? getOffsetFromDocument(getContainingBlock(el) || doc, 'padding') : getOffsetFromDocument(el, edge);
 
     if (position === 'relative') {
 
-      var left = getStyle(el, 'left');
-      var right = getStyle(el, 'right');
-      var top = getStyle(el, 'top');
-      var bottom = getStyle(el, 'bottom');
+      left = getStyle(el, 'left');
+      right = getStyle(el, 'right');
+      top = getStyle(el, 'top');
+      bottom = getStyle(el, 'bottom');
 
       if (left !== 'auto' || right !== 'auto') {
         offset.left -= left === 'auto' ? -toFloat(right) : toFloat(left);
@@ -1265,8 +1287,8 @@ TODOS/IDEAS:
       edge = edges[edge];
 
       // Get left and top margins.
-      var marginLeft = getStyleAsFloat(el, 'margin-left');
-      var marginTop = getStyleAsFloat(el, 'margin-top');
+      marginLeft = getStyleAsFloat(el, 'margin-left');
+      marginTop = getStyleAsFloat(el, 'margin-top');
 
       // If edge is "margin" remove negative left/top margins from offset to
       // account for their effect on position.
@@ -1326,7 +1348,7 @@ TODOS/IDEAS:
    *   - Additional left/top offset in pixels.
    * @returns {Number}
    */
-  function getPlacementPosition(elementPosition, targetPosition, targetSize, targetOffset, elementSize, elementNwOffset, extraOffset) {
+  function getPlacePosition(elementPosition, targetPosition, targetSize, targetOffset, elementSize, elementNwOffset, extraOffset) {
 
     var placement = elementPosition.charAt(0) + targetPosition.charAt(0);
     var northwestPoint = targetOffset + extraOffset - elementNwOffset;
@@ -1348,12 +1370,12 @@ TODOS/IDEAS:
    * order to be aligned correctly if the target element overlaps the container.
    *
    * @private
-   * @param {PlacementOverflowConfig} overflowConfig
+   * @param {PlaceOverflowConfig} overflowConfig
    * @param {Overlap} targetOverlap
    * @param {Boolean} isVertical
    * @returns {Number}
    */
-  function getPlacementOverflowPush(overflowConfig, targetOverlap, isVertical) {
+  function getPlaceOverflowPush(overflowConfig, targetOverlap, isVertical) {
 
     var ret = 0;
     var push = 'push';
@@ -1410,11 +1432,11 @@ TODOS/IDEAS:
   }
 
   /**
-   * Sanitize contain.onOverflow option of .placement() method.
+   * Sanitize contain.onOverflow option of .place() method.
    *
    * @private
-   * @param {PlacementOverflowConfig} overflowConfig
-   * @returns {?PlacementOverflow}
+   * @param {PlaceOverflowConfig} overflowConfig
+   * @returns {?PlaceOverflow}
    */
   function getOverflowAction(overflowConfig) {
 
@@ -1551,7 +1573,7 @@ TODOS/IDEAS:
    */
 
   /**
-   * @typedef {Object} Placement
+   * @typedef {Object} Place
    * @property {Number} left
    *   - Target element's new left position.
    * @property {Number} top
@@ -1559,21 +1581,21 @@ TODOS/IDEAS:
    */
 
   /**
-   * Raw positioning data for position option of .placement() method.
+   * Raw positioning data for position option of .place() method.
    * String syntax: "elemX elemY targetX targetY".
    * Array syntax: ["elemX", "elemY", "targetX", "targetY"].
    * Possible values for elemX and targetX: "left", "center", "right".
    * Possible values for elemY and targetY: "top", "center", "bottom".
    *
-   * @typedef {(Array|String)} PlacementPosition
+   * @typedef {(Array|String)} PlacePosition
    */
 
   /**
-   * Placement method's containment configuration.
+   * Place method's containment configuration.
    *
-   * @typedef {Object} PlacementContainment
+   * @typedef {Object} PlaceContainment
    * @property {?(Array|Document|Element|Window|Rectangle)} within
-   * @property {?(PlacementOverflowConfig|String)} onOverflow
+   * @property {?(PlaceOverflowConfig|String)} onOverflow
    */
 
   /**
@@ -1582,18 +1604,18 @@ TODOS/IDEAS:
    * returning it and accessing all the positioning data that was used to
    * calculate the element's new position.
    *
-   * @callback PlacementAdjustmentCallback
-   * @param {Placement} position
+   * @callback PlaceAdjustmentCallback
+   * @param {Place} position
    *   - This object is the same object that the method will return, so
    *     modifying it's properties will affect the return value of the method.
-   * @param {PlacementData} data
+   * @param {PlaceData} data
    *   - This object contains all the positioning data.
    */
 
   /**
-   * All the positioning data of placement method.
+   * All the positioning data of place method.
    *
-   * @typedef {Object} PlacementData
+   * @typedef {Object} PlaceData
    * @property {Rectangle} elementRect
    *   - Element's new rect data where the element is assumed to be in the newly
    *     calculated position.
@@ -1629,7 +1651,7 @@ TODOS/IDEAS:
    * mix side overflow properties with axis overflow properties remember that
    * the side configuration overwrites the axis configuration.
    *
-   * @typedef {Object} PlacementOverflowConfig
+   * @typedef {Object} PlaceOverflowConfig
    * @property {String} [left='none']
    * @property {String} [right='none']
    * @property {String} [top='none']
@@ -1640,9 +1662,9 @@ TODOS/IDEAS:
 
   /**
    * A sanitized configuration data object for contain.onOverflow option of
-   * placement method.
+   * place method.
    *
-   * @typedef {Object} PlacementOverflow
+   * @typedef {Object} PlaceOverflow
    * @property {String} left
    * @property {String} right
    * @property {String} top
@@ -1659,8 +1681,7 @@ TODOS/IDEAS:
     distance: getDistance,
     intersection: getIntersectionMultiple,
     overflow: getOverflow,
-    placement: getPlacement,
-    _settings: settings
+    place: getPlace
   };
 
 }));
